@@ -1,3 +1,4 @@
+using AIKnowledgeAssistant.Api.Configuration;
 using AIKnowledgeAssistant.Api.Interfaces;
 using AIKnowledgeAssistant.Api.Services;
 
@@ -12,6 +13,10 @@ builder.Services.AddSwaggerGen();
 
 // Register the ChatService with the dependency injection container
 builder.Services.AddScoped<IChatService, ChatService>();
+
+// Register the Gemimi service with the dependency injection container
+builder.Services.Configure<GeminiOptions>(
+    builder.Configuration.GetSection("Gemini"));
 
 var app = builder.Build();
 
