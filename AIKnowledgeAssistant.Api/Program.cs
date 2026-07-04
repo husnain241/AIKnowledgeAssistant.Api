@@ -1,8 +1,10 @@
 using AIKnowledgeAssistant.Api.Configuration;
+using AIKnowledgeAssistant.Api.Configuration;
 using AIKnowledgeAssistant.Api.Interfaces;
 using AIKnowledgeAssistant.Api.Services;
-using AIKnowledgeAssistant.Api.Configuration;
+using AIKnowledgeAssistantAPI.Data;
 using Google.GenAI;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,9 +12,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Register the ApplicationDbContext with the dependency injection container
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DBConnection"));
+});
 
 // Register the ChatService with the dependency injection container
 builder.Services.AddScoped<IChatService, ChatService>();
