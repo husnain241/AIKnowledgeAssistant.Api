@@ -6,6 +6,8 @@ using AIKnowledgeAssistant.Api.Models;
 using AIKnowledgeAssistantAPI.Data;
 using Google.GenAI;
 using Google.GenAI.Types;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace AIKnowledgeAssistant.Api.Services;
@@ -15,24 +17,30 @@ public class ChatService : IChatService
     private readonly GeminiOptions _geminiOptions;
     private readonly Client _client;
     private readonly ApplicationDbContext _context;
+    private readonly ILogger<ChatService> _logger;
+
 
 
     public ChatService(
     Client client,
     IOptions<GeminiOptions> options,
-    ApplicationDbContext context)
+    ApplicationDbContext context, ILogger<ChatService> logger)
     {
         _client = client;
         _geminiOptions = options.Value;
         _context = context;
+        _logger = logger;
+
     }
 
     public async Task<ChatResponseDto> AskAsync(ChatRequestDto request)
     {
+        _logger.LogInformation("AskAsync started.");
         Conversation conversation;
 
         if (request.ConversationId == null)
         {
+            _logger.LogInformation("Creating a new conversation.");
             conversation = new Conversation
             {
                 Title = GenerateTitle(request.Message),
@@ -45,7 +53,9 @@ public class ChatService : IChatService
         }
         else
         {
-            conversation = await _context.Conversations.FindAsync(request.ConversationId);
+               conversation = await _context.Conversations
+                .Include(c => c.Messages)
+                .FirstOrDefaultAsync(c => c.Id == request.ConversationId);
 
             if (conversation == null)
             {
@@ -56,7 +66,7 @@ public class ChatService : IChatService
         var userMessage = new Message
         {
             Conversation = conversation,
-            Role = "User",
+            Role = Roles.User,
             Content = request.Message,
             CreatedAt = DateTime.UtcNow
         };
@@ -77,7 +87,7 @@ public class ChatService : IChatService
             var aiMessage = new Message
             {
                 Conversation = conversation,
-                Role = "Assistant",
+                Role = Roles.Assistant,
                 Content = answer,
                 CreatedAt = DateTime.UtcNow
             };
