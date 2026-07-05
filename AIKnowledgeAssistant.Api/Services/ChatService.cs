@@ -1,9 +1,11 @@
 ﻿using AIKnowledgeAssistant.Api.Configuration;
+using AIKnowledgeAssistant.Api.Data;
 using AIKnowledgeAssistant.Api.DTOs;
 using AIKnowledgeAssistant.Api.Interfaces;
 using AIKnowledgeAssistant.Api.Models;
 using AIKnowledgeAssistantAPI.Data;
 using Google.GenAI;
+using Google.GenAI.Types;
 using Microsoft.Extensions.Options;
 
 namespace AIKnowledgeAssistant.Api.Services;
@@ -15,19 +17,23 @@ public class ChatService : IChatService
     private readonly ApplicationDbContext _context;
 
 
-    public ChatService(IOptions<GeminiOptions> options, ApplicationDbContext context)
+    public ChatService(
+    Client client,
+    IOptions<GeminiOptions> options,
+    ApplicationDbContext context)
     {
+        _client = client;
         _geminiOptions = options.Value;
-
-        _client = new Client(apiKey: _geminiOptions.ApiKey);
         _context = context;
     }
 
     public async Task<ChatResponseDto> AskAsync(ChatRequestDto request)
     {
+        Conversation conversation;
+
         if (request.ConversationId == null)
         {
-            var conversation = new Conversation
+            conversation = new Conversation
             {
                 Title = GenerateTitle(request.Message),
                 CreatedAt = DateTime.UtcNow
@@ -37,6 +43,27 @@ public class ChatService : IChatService
 
             await _context.SaveChangesAsync();
         }
+        else
+        {
+            conversation = await _context.Conversations.FindAsync(request.ConversationId);
+
+            if (conversation == null)
+            {
+                throw new Exception("Conversation not found.");
+            }
+        }
+
+        var userMessage = new Message
+        {
+            Conversation = conversation,
+            Role = "User",
+            Content = request.Message,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Messages.Add(userMessage);
+
+        await _context.SaveChangesAsync();
 
 
         try
@@ -44,21 +71,35 @@ public class ChatService : IChatService
             var response = await _client.Models.GenerateContentAsync(
                 model: _geminiOptions.Model,
                 contents: request.Message);
-                
+
+            var answer = response.Candidates[0].Content.Parts[0].Text;
+
+            var aiMessage = new Message
+            {
+                Conversation = conversation,
+                Role = "Assistant",
+                Content = answer,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Messages.Add(aiMessage);
+            await _context.SaveChangesAsync();
+
             return new ChatResponseDto
             {
-                Answer = response.Candidates[0].Content.Parts[0].Text
+                ConversationId = conversation.Id,
+                Answer = answer
             };
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return new ChatResponseDto
             {
-                Answer = $"An error occurred: {ex.Message}"
+                ConversationId = conversation.Id,
+                Answer = "Sorry, something went wrong while generating the AI response."
             };
         }
     }
-
     //helper method to generate a title for the conversation based on the first message
     private static string GenerateTitle(string message)
     {
