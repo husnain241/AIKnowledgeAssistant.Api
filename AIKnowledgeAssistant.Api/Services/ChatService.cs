@@ -38,6 +38,7 @@ public class ChatService : IChatService
         _logger.LogInformation("AskAsync started.");
         Conversation conversation;
 
+
         if (request.ConversationId == null)
         {
             _logger.LogInformation("Creating a new conversation.");
@@ -63,6 +64,17 @@ public class ChatService : IChatService
             }
         }
 
+
+        List<Message> orderedMessages = new();
+
+        if (request.ConversationId != null)
+        {
+            orderedMessages = conversation.Messages
+                .OrderBy(m => m.CreatedAt)
+                .ToList();
+        }
+
+
         var userMessage = new Message
         {
             Conversation = conversation,
@@ -78,9 +90,34 @@ public class ChatService : IChatService
 
         try
         {
+            var contents = orderedMessages
+     .Select(m => new Content
+     {
+         Role = m.Role == Roles.Assistant ? "model" : "user",
+         Parts = new List<Part>
+         {
+            new Part
+            {
+                Text = m.Content
+            }
+         }
+     })
+     .ToList();
+            contents.Add(new Content
+            {
+                Role = "user",
+                Parts = new List<Part>
+    {
+        new Part
+        {
+            Text = request.Message
+        }
+    }
+            });
+
             var response = await _client.Models.GenerateContentAsync(
                 model: _geminiOptions.Model,
-                contents: request.Message);
+                contents: contents);
 
             var answer = response.Candidates[0].Content.Parts[0].Text;
 
