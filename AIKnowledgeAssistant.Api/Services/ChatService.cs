@@ -154,4 +154,72 @@ public class ChatService : IChatService
             ? message
             : message.Substring(0, 50) + "...";
     }
-}   
+
+
+    public async Task<List<ConversationListDto>> GetAllConversationsAsync()
+    {
+        return await _context.Conversations
+            .OrderByDescending(c => c.CreatedAt)
+            .Select(c => new ConversationListDto
+            {
+                Id = c.Id,
+                Title = c.Title,
+                CreatedAt = c.CreatedAt
+            })
+            .ToListAsync();
+    }
+
+    public async Task<ConversationDetailDto> GetConversationByIdAsync(int id)
+    {
+        var conversation = await _context.Conversations
+            .Include(c => c.Messages)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (conversation is null)
+            throw new Exception("Conversation not found.");
+
+        return new ConversationDetailDto
+        {
+            Id = conversation.Id,
+            Title = conversation.Title,
+            CreatedAt = conversation.CreatedAt,
+
+            Messages = conversation.Messages
+                .OrderBy(m => m.CreatedAt)
+                .Select(m => new MessageDto
+                {
+                    Id = m.Id,
+                    Role = m.Role,
+                    Content = m.Content,
+                    CreatedAt = m.CreatedAt
+                })
+                .ToList()
+        };
+
+    }
+
+    public async Task RenameConversationAsync(int id, RenameConversationDto dto)
+    {
+        var conversation = await _context.Conversations
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (conversation is null)
+            throw new Exception("Conversation not found.");
+
+        conversation.Title = dto.Title;
+
+        await _context.SaveChangesAsync();
+    }
+    public async Task DeleteConversationAsync(int id)
+    {
+        var conversation = await _context.Conversations
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (conversation is null)
+            throw new Exception("Conversation not found.");
+
+        _context.Conversations.Remove(conversation);
+
+        await _context.SaveChangesAsync();
+    }
+}       

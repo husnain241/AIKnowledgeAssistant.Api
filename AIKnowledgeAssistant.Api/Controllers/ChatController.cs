@@ -22,4 +22,36 @@ public class ChatController : ControllerBase
 
         return Ok(response);
     }
+
+    [HttpGet("conversations")]
+    public async Task<IActionResult> GetAllConversations()
+    {
+        var conversations = await _chatService.GetAllConversationsAsync();
+
+        return Ok(conversations);
+    }
+
+    [HttpGet("conversations/{id}")]
+    public async Task<IActionResult> GetConversationById(int id)
+    {
+        var conversation = await _chatService.GetConversationByIdAsync(id);
+
+        return Ok(conversation);
+    }
+
+    [HttpPut("conversations/{id}")]
+    public async Task<IActionResult> RenameConversation(int id, RenameConversationDto dto)
+    {
+        await _chatService.RenameConversationAsync(id, dto);
+
+        return NoContent();
+    }
+
+    [HttpDelete("conversations/{id}")]
+    public async Task<IActionResult> DeleteConversation(int id)
+    {
+        await _chatService.DeleteConversationAsync(id);
+
+        return NoContent();
+    }
 }
