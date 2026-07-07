@@ -12,7 +12,7 @@ namespace AIKnowledgeAssistant.Api.Services
             _client = client;
         }
 
-        public async Task<List<float>> GenerateEmbeddingAsync(string text)
+        public async Task<List<double>> GenerateEmbeddingAsync(string text)
         {
             var response = await _client.Models.EmbedContentAsync(
                 model: "text-embedding-004",
