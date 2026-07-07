@@ -1,6 +1,6 @@
 ﻿namespace AIKnowledgeAssistant.Api.Interfaces
 {
-    public class IDocumentService
+    public interface IDocumentService
     {
         Task UploadAsync(IFormFile file);
 
