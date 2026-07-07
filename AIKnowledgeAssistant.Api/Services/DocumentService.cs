@@ -7,10 +7,13 @@ using UglyToad.PdfPig;
 public class DocumentService : IDocumentService
 {
     private readonly ApplicationDbContext _context;
+    private readonly IChunkingService _chunkingService;
 
-    public DocumentService(ApplicationDbContext context)
+
+    public DocumentService(ApplicationDbContext context, IChunkingService chunkingService)
     {
         _context = context;
+        _chunkingService = chunkingService;
     }
 
     public async Task UploadAsync(IFormFile file)
@@ -73,6 +76,21 @@ public class DocumentService : IDocumentService
 
         _context.Documents.Add(document);
 
+        await _context.SaveChangesAsync();
+
+    /// now start to saving a chunking process
+    
+        var chunks = _chunkingService.ChunkText(extractedText);
+        foreach (var (chunk, index) in chunks.Select((value, i) => (value, i)))
+        {
+            var documentChunk = new DocumentChunk
+            {
+                DocumentId = document.Id,
+                Content = chunk,
+                ChunkIndex = index
+            };
+            _context.DocumentChunks.Add(documentChunk);
+        }
         await _context.SaveChangesAsync();
 
 

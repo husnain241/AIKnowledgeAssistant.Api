@@ -9,5 +9,7 @@
         public string Content { get; set; } = string.Empty;
 
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+
+        public ICollection<DocumentChunk> Chunks { get; set; } = [];
     }
 }

@@ -13,6 +13,19 @@ namespace AIKnowledgeAssistantAPI.Data
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Document> Documents { get; set; }
+        public DbSet<DocumentChunk> DocumentChunks { get; set; }
 
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Document>()
+                .HasMany(d => d.Chunks)
+                .WithOne(c => c.Document)
+                .HasForeignKey(c => c.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
     }
+
 }

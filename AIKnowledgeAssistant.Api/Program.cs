@@ -24,7 +24,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Register the ChatService with the dependency injection container
 builder.Services.AddScoped<IChatService, ChatService>();
-builder.Services.AddScoped<IDocumentService, DocumentService>(); 
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddScoped<IChunkingService, ChunkingService>();
+builder.Services.AddScoped<IEmbeddingService, EmbeddingService>();
 
 // Register the Gemimi service with the dependency injection container
 builder.Services.Configure<GeminiOptions>(
