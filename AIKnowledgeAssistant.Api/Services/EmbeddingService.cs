@@ -15,7 +15,7 @@ namespace AIKnowledgeAssistant.Api.Services
         public async Task<List<double>> GenerateEmbeddingAsync(string text)
         {
             var response = await _client.Models.EmbedContentAsync(
-                model: "text-embedding-004",
+                model: "gemini-embedding-2",
                 contents: text);
 
             return response.Embeddings[0].Values.ToList();

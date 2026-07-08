@@ -8,12 +8,16 @@ public class DocumentService : IDocumentService
 {
     private readonly ApplicationDbContext _context;
     private readonly IChunkingService _chunkingService;
+    private readonly IEmbeddingService _embeddingService;
 
 
-    public DocumentService(ApplicationDbContext context, IChunkingService chunkingService)
+
+
+    public DocumentService(ApplicationDbContext context, IChunkingService chunkingService, IEmbeddingService embeddingService)
     {
         _context = context;
         _chunkingService = chunkingService;
+        _embeddingService = embeddingService;
     }
 
     public async Task UploadAsync(IFormFile file)
@@ -90,8 +94,12 @@ public class DocumentService : IDocumentService
                 ChunkIndex = index
             };
             _context.DocumentChunks.Add(documentChunk);
+            await _embeddingService.GenerateEmbeddingAsync(documentChunk.Content);
+
         }
         await _context.SaveChangesAsync();
+
+
 
 
 
