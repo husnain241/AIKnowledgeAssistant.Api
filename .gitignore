@@ -3,6 +3,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Ignore appsettings
+AIKnowledgeAssistant.Api/appsettings.json
+
+# Ignore EF Core Migrations
+AIKnowledgeAssistant.Api/Migrations/
+
 # User-specific files
 *.rsuser
 *.suo
