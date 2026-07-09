@@ -6,6 +6,7 @@ using Google.GenAI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Qdrant.Client;
+using Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,11 +47,21 @@ builder.Services.AddSingleton<QdrantClient>(sp =>
     var options = sp.GetRequiredService<IOptions<QdrantOptions>>().Value;
 
     return new QdrantClient(
-        host: options.Url,
-        apiKey: options.ApiKey);
+    host: options.Host,
+    port: options.Port,
+    https: true,
+    apiKey: options.ApiKey);
 });
 
+
 var app = builder.Build();
+
+// ?? Add this block here
+using (var scope = app.Services.CreateScope())
+{
+    var qdrantService = scope.ServiceProvider.GetRequiredService<IQdrantService>();
+    await qdrantService.CreateCollectionAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

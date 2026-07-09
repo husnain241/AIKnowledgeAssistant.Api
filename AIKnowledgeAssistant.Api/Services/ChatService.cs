@@ -26,12 +26,15 @@ public class ChatService : IChatService
     public ChatService(
     Client client,
     IOptions<GeminiOptions> options,
-    ApplicationDbContext context, ILogger<ChatService> logger)
+    ApplicationDbContext context, ILogger<ChatService> logger, IEmbeddingService embeddingService, IQdrantService qdrantService)
     {
         _client = client;
         _geminiOptions = options.Value;
         _context = context;
         _logger = logger;
+        _embeddingService = embeddingService;
+        _qdrantService = qdrantService;
+
 
     }
 
@@ -125,14 +128,22 @@ public class ChatService : IChatService
         new Part
         {
 Text = $"""
-Use the following context to answer the question.
+You are an AI Knowledge Assistant.
+
+Answer ONLY using the provided context.
+
+If the answer is not available in the context, reply:
+"I couldn't find this information in the uploaded documents."
+
+Do not make up information.
+Do not use your own knowledge.
 
 Context:
 {context}
 
 Question:
 {request.Message}
-"""        }
+"""       }
     }
             });
 
