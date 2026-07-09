@@ -18,6 +18,8 @@ public class ChatService : IChatService
     private readonly Client _client;
     private readonly ApplicationDbContext _context;
     private readonly ILogger<ChatService> _logger;
+    private readonly IEmbeddingService _embeddingService;
+    private readonly IQdrantService _qdrantService;
 
 
 
@@ -87,6 +89,18 @@ public class ChatService : IChatService
 
         await _context.SaveChangesAsync();
 
+        //implement question Embedding and Qdrant search here to retrieve relevant context for the AI model
+        var questionEmbedding = await _embeddingService.GenerateEmbeddingAsync(request.Message);
+        var chunkIds = await _qdrantService.SearchSimilarAsync(questionEmbedding);
+
+        var relevantChunks = await _context.DocumentChunks
+    .Where(c => chunkIds.Contains(c.Id))
+    .OrderBy(c => c.ChunkIndex)
+    .ToListAsync();
+
+        var context = string.Join(
+    "\n\n",
+    relevantChunks.Select(c => c.Content));
 
         try
         {
@@ -110,8 +124,15 @@ public class ChatService : IChatService
     {
         new Part
         {
-            Text = request.Message
-        }
+Text = $"""
+Use the following context to answer the question.
+
+Context:
+{context}
+
+Question:
+{request.Message}
+"""        }
     }
             });
 

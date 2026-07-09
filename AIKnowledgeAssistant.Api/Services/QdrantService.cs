@@ -59,7 +59,7 @@ public class QdrantService : IQdrantService
             limit: (ulong)top,
             payloadSelector: true // include payload so we can read chunkId back
         );
-
+            
         return results
             .Select(r => (int)r.Payload["chunkId"].IntegerValue)
             .ToList();
