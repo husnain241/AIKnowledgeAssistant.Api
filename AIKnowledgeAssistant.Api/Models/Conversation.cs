@@ -12,5 +12,8 @@ namespace AIKnowledgeAssistant.Api.Models
 
         public ICollection<Message> Messages { get; set; } = new List<Message>();
 
+        public ICollection<ConversationDocument> ConversationDocuments { get; set; }
+    = new List<ConversationDocument>();
+
     }
 }

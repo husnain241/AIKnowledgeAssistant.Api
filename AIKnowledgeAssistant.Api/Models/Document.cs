@@ -11,5 +11,8 @@
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<DocumentChunk> Chunks { get; set; } = [];
+
+        public ICollection<ConversationDocument> ConversationDocuments { get; set; }
+    = new List<ConversationDocument>();
     }
 }

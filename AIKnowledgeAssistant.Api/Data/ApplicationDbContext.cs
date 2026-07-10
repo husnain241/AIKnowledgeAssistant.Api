@@ -25,6 +25,19 @@ namespace AIKnowledgeAssistantAPI.Data
                 .WithOne(c => c.Document)
                 .HasForeignKey(c => c.DocumentId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ConversationDocument>()
+    .HasKey(cd => new { cd.ConversationId, cd.DocumentId });
+
+            modelBuilder.Entity<ConversationDocument>()
+                .HasOne(cd => cd.Conversation)
+                .WithMany(c => c.ConversationDocuments)
+                .HasForeignKey(cd => cd.ConversationId);
+
+            modelBuilder.Entity<ConversationDocument>()
+                .HasOne(cd => cd.Document)
+                .WithMany(d => d.ConversationDocuments)
+                .HasForeignKey(cd => cd.DocumentId);
         }
     }
 
