@@ -2,7 +2,7 @@
 {
     public interface IDocumentService
     {
-        Task UploadAsync(IFormFile file);
+        Task UploadAsync(IFormFile file,int ConversationId);
 
     }
 }

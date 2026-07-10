@@ -18,7 +18,7 @@ namespace AIKnowledgeAssistant.Api.Controllers
         [HttpPost("upload")]
         public async Task<IActionResult> Upload([FromForm] UploadDocumentDto dto)
         {
-            await _documentService.UploadAsync(dto.File);
+            await _documentService.UploadAsync(dto.File,dto.ConversationId);
 
             return Ok("Document uploaded successfully.");
         }

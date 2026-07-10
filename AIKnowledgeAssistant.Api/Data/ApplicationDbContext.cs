@@ -14,6 +14,7 @@ namespace AIKnowledgeAssistantAPI.Data
         public DbSet<Message> Messages { get; set; }
         public DbSet<Document> Documents { get; set; }
         public DbSet<DocumentChunk> DocumentChunks { get; set; }
+        public DbSet<ConversationDocument> ConversationDocuments { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

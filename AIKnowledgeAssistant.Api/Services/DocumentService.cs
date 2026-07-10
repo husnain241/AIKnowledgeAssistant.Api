@@ -1,6 +1,7 @@
 ﻿using AIKnowledgeAssistant.Api.Interfaces;
 using AIKnowledgeAssistant.Api.Models;
 using AIKnowledgeAssistantAPI.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Services;
 using System;
@@ -21,8 +22,15 @@ public class DocumentService : IDocumentService
         _qdrantService = qdrantService;
     }
 
-    public async Task UploadAsync(IFormFile file)
+    public async Task UploadAsync(IFormFile file,int ConversationId)
     {
+        var conversation = await _context.Conversations
+    .FirstOrDefaultAsync(c => c.Id == ConversationId);
+
+        if (conversation == null)
+        {
+            throw new Exception("Conversation not found.");
+        }
         if (file == null)
             throw new ArgumentNullException(nameof(file));
 
@@ -83,8 +91,18 @@ public class DocumentService : IDocumentService
 
         await _context.SaveChangesAsync();
 
-    /// now start to saving a chunking process
-    
+        var conversationDocument = new ConversationDocument
+        {
+            ConversationId = ConversationId,
+            DocumentId = document.Id
+        };
+
+        _context.ConversationDocuments.Add(conversationDocument);
+
+        await _context.SaveChangesAsync();
+
+        /// now start to saving a chunking process
+
         var chunks = _chunkingService.ChunkText(extractedText);
         foreach (var (chunk, index) in chunks.Select((value, i) => (value, i)))
         {
