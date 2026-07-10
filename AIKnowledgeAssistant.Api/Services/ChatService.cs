@@ -229,7 +229,6 @@ Question:
         };
 
     }
-
     public async Task RenameConversationAsync(int id, RenameConversationDto dto)
     {
         var conversation = await _context.Conversations

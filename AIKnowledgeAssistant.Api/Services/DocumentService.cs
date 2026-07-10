@@ -95,6 +95,8 @@ public class DocumentService : IDocumentService
                 ChunkIndex = index
             };
             _context.DocumentChunks.Add(documentChunk);
+            await _context.SaveChangesAsync();   // Save first
+
             var embedding = await _embeddingService.GenerateEmbeddingAsync(documentChunk.Content);
             // Then store in Qdrant
             await _qdrantService.StoreEmbeddingAsync(
@@ -102,7 +104,6 @@ public class DocumentService : IDocumentService
                 embedding,
                 documentChunk.Content);
         }
-        await _context.SaveChangesAsync();
 
         
 
