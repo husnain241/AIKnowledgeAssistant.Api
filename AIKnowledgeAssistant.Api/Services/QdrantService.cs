@@ -3,6 +3,8 @@ using AIKnowledgeAssistant.Api.Interfaces;
 using Microsoft.Extensions.Options;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
+using static Qdrant.Client.Grpc.Conditions;   // <-- this line is missing
+
 
 namespace Services;
 
@@ -19,21 +21,26 @@ public class QdrantService : IQdrantService
 
     public async Task CreateCollectionAsync()
     {
-        // CollectionExistsAsync avoids an exception-driven flow on repeated startup calls
         var exists = await _client.CollectionExistsAsync(_options.CollectionName);
-        if (exists)
-            return;
 
-        await _client.CreateCollectionAsync(
+        if (!exists)
+        {
+            await _client.CreateCollectionAsync(
+                collectionName: _options.CollectionName,
+                vectorsConfig: new VectorParams
+                {
+                    Size = 3072,
+                    Distance = Distance.Cosine
+                });
+        }
+
+        // Hamesha ensure karo payload index exist kare
+        await _client.CreatePayloadIndexAsync(
             collectionName: _options.CollectionName,
-            vectorsConfig: new VectorParams
-            {
-                Size = 3072,                 // matches Gemini text-embedding-004 output dimensionality
-                Distance = Distance.Cosine    // cosine is the standard choice for text embeddings
-            });
+            fieldName: "documentId",
+            schemaType: PayloadSchemaType.Integer);
     }
-
-    public async Task StoreEmbeddingAsync(int chunkId, List<double> embedding, string content)
+    public async Task StoreEmbeddingAsync(int chunkId, int documentId, List<double> embedding, string content)
     {
         var point = new PointStruct
         {
@@ -42,6 +49,7 @@ public class QdrantService : IQdrantService
             Payload =
             {
                 ["chunkId"] = chunkId,
+                ["documentId"] = documentId,
                 ["content"] = content
             }
         };
@@ -49,17 +57,26 @@ public class QdrantService : IQdrantService
         await _client.UpsertAsync(_options.CollectionName, new List<PointStruct> { point });
     }
 
-    public async Task<List<int>> SearchSimilarAsync(List<double> embedding, int top = 5)
+    public async Task<List<int>> SearchSimilarAsync(List<double> embedding, List<int> documentIds, int top = 5)
     {
         var queryVector = embedding.Select(d => (float)d).ToArray();
+
+        var filter = new Filter
+        {
+            Must =
+        {
+            Match("documentId", documentIds.Select(id => (long)id).ToList())
+        }
+        };
 
         var results = await _client.QueryAsync(
             collectionName: _options.CollectionName,
             query: queryVector,
+            filter: filter,
             limit: (ulong)top,
-            payloadSelector: true // include payload so we can read chunkId back
+            payloadSelector: true
         );
-            
+
         return results
             .Select(r => (int)r.Payload["chunkId"].IntegerValue)
             .ToList();

@@ -67,6 +67,20 @@ public class ChatService : IChatService
             {
                 throw new Exception("Conversation not found.");
             }
+        
+        }
+        var documentIds = await _context.ConversationDocuments
+    .Where(cd => cd.ConversationId == conversation.Id)
+    .Select(cd => cd.DocumentId)
+    .ToListAsync();
+
+        if (!documentIds.Any())
+        {
+            return new ChatResponseDto
+            {
+                ConversationId = conversation.Id,
+                Answer = "No documents are attached to this conversation."
+            };
         }
 
 
@@ -91,10 +105,9 @@ public class ChatService : IChatService
         _context.Messages.Add(userMessage);
 
         await _context.SaveChangesAsync();
-
         //implement question Embedding and Qdrant search here to retrieve relevant context for the AI model
         var questionEmbedding = await _embeddingService.GenerateEmbeddingAsync(request.Message);
-        var chunkIds = await _qdrantService.SearchSimilarAsync(questionEmbedding);
+        var chunkIds = await _qdrantService.SearchSimilarAsync(questionEmbedding, documentIds);
 
         var relevantChunks = await _context.DocumentChunks
     .Where(c => chunkIds.Contains(c.Id))
@@ -150,7 +163,7 @@ Question:
             var response = await _client.Models.GenerateContentAsync(
                 model: _geminiOptions.Model,
                 contents: contents);
-
+           
             var answer = response.Candidates[0].Content.Parts[0].Text;
 
             var aiMessage = new Message

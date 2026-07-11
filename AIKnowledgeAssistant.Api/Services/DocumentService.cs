@@ -119,6 +119,7 @@ public class DocumentService : IDocumentService
             // Then store in Qdrant
             await _qdrantService.StoreEmbeddingAsync(
                 documentChunk.Id,
+                document.Id,
                 embedding,
                 documentChunk.Content);
         }
